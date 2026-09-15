@@ -85,7 +85,9 @@ const InteractiveHeroBanner: React.FC = () => {
           <div className="inline-block">
             <span className="text-sm font-semibold uppercase tracking-widest text-emerald-400">✨ Featured Offer</span>
           </div>
-          <h1 className={`${styles['hero-title']} text-5xl font-bold leading-tight tracking-tight text-white md:text-7xl`}>{bannerData.title}</h1>
+          <h1 className={`${styles['hero-title']} text-5xl font-bold leading-tight tracking-tight text-white md:text-7xl`}>
+            CHẤT LƯỢNG VƯỢT TRỘI / ĐẲNG CẤP DẪN ĐẦU
+          </h1>
           <p className={`${styles['hero-desc']} text-xl font-light text-gray-200 md:text-2xl`}>{bannerData.desc}</p>
           <Link
             href="/MuaBanXe/MuaBanXe"

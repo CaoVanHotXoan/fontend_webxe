@@ -91,11 +91,11 @@
 }
 
 .hero-title {
-  max-width: 1180px;
+  max-width: none;
   margin: 0 auto;
-  font-size: clamp(2.35rem, 4.2vw, 4.25rem) !important;
+  font-size: clamp(1.55rem, 3vw, 3.35rem) !important;
   line-height: 1.08;
-  text-wrap: balance;
+  white-space: nowrap;
 }
 
 .hero-desc {

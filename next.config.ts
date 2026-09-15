@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: '/swagger',
+        destination: '/Swagger/Swagger',
+        permanent: false,
+      },
+      {
         source: '/login',
         destination: '/Login/Login',
         permanent: false,
@@ -17,6 +22,10 @@ const nextConfig: NextConfig = {
       .replace(/\/$/, '');
 
     return [
+      {
+        source: '/api/openapi.json',
+        destination: `${backendUrl}/api/openapi.json`,
+      },
       {
         source: '/api/backend/:path*',
         destination: `${backendUrl}/api/:path*`,

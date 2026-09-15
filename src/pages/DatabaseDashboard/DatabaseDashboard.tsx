@@ -269,10 +269,82 @@ const getProcedureName = (tableId: string, action: "create" | "edit" | "delete")
   return `sp_${actionPrefix}${tableId}`;
 };
 
+function VehicleStatistics({ vehicles, brands }: { vehicles: Array<Record<string, CellValue>>; brands: Array<Record<string, CellValue>> }) {
+  const brandNames = new Map(brands.map((brand) => [Number(brand.MaHang), String(brand.TenHang || `Hãng ${brand.MaHang}`)]));
+  const totalModels = vehicles.length;
+  const totalStock = vehicles.reduce((sum, vehicle) => sum + (Number(vehicle.SoLuong) || 0), 0);
+  const outOfStock = vehicles.filter((vehicle) => (Number(vehicle.SoLuong) || 0) <= 0).length;
+  const averagePrice = totalModels
+    ? vehicles.reduce((sum, vehicle) => sum + (Number(vehicle.Gia) || 0), 0) / totalModels
+    : 0;
+  const brandStats = Array.from(vehicles.reduce((result, vehicle) => {
+    const brandId = Number(vehicle.MaHang);
+    const name = brandNames.get(brandId) || "Chưa phân loại";
+    result.set(name, (result.get(name) || 0) + (Number(vehicle.SoLuong) || 0));
+    return result;
+  }, new Map<string, number>()).entries())
+    .sort((first, second) => second[1] - first[1])
+    .slice(0, 6);
+  const maxBrandStock = Math.max(...brandStats.map(([, value]) => value), 1);
+  const availableModels = totalModels - outOfStock;
+  const availablePercent = totalModels ? Math.round((availableModels / totalModels) * 100) : 0;
+
+  return (
+    <section className={styles.statisticsSection} aria-labelledby="vehicle-statistics-title">
+      <div className={styles.statisticsHeader}>
+        <div>
+          <p className={styles.detailLabel}>Báo cáo kho xe</p>
+          <h2 id="vehicle-statistics-title">Thống kê xe</h2>
+        </div>
+        <div className={styles.statisticsActions}>
+          <span className={styles.statisticsUpdated}>Dữ liệu hiện tại</span>
+          <a className={styles.swaggerButton} href="/Swagger/Swagger" target="_blank" rel="noreferrer">⚙ Mở Swagger API</a>
+        </div>
+      </div>
+
+      <div className={styles.statCardGrid}>
+        <article className={styles.statCard}><span>Tổng mẫu xe</span><strong>{totalModels}</strong><small>Mẫu đang quản lý</small></article>
+        <article className={styles.statCard}><span>Tổng tồn kho</span><strong>{totalStock.toLocaleString("vi-VN")}</strong><small>Chiếc trong kho</small></article>
+        <article className={styles.statCard}><span>Giá trung bình</span><strong>{Math.round(averagePrice).toLocaleString("vi-VN")} đ</strong><small>Tính theo mẫu xe</small></article>
+        <article className={styles.statCard}><span>Đang có hàng</span><strong>{availablePercent}%</strong><small>{outOfStock} mẫu hết hàng</small></article>
+      </div>
+
+      <div className={styles.chartGrid}>
+        <article className={styles.chartPanel}>
+          <div className={styles.chartTitle}><div><p className={styles.detailLabel}>Phân bổ tồn kho</p><h3>Số lượng theo hãng xe</h3></div><span>Đơn vị: chiếc</span></div>
+          <div className={styles.barChart}>
+            {brandStats.length ? brandStats.map(([name, value]) => (
+              <div className={styles.barRow} key={name}>
+                <span className={styles.barLabel}>{name}</span>
+                <div className={styles.barTrack}><span className={styles.barFill} style={{ width: `${(value / maxBrandStock) * 100}%` }} /></div>
+                <strong>{value}</strong>
+              </div>
+            )) : <p className={styles.emptyChart}>Chưa có dữ liệu xe.</p>}
+          </div>
+        </article>
+
+        <article className={styles.chartPanel}>
+          <div className={styles.chartTitle}><div><p className={styles.detailLabel}>Tình trạng mẫu xe</p><h3>Khả dụng trong kho</h3></div></div>
+          <div className={styles.donutChartArea}>
+            <div className={styles.donutChart} style={{ background: `conic-gradient(#0f766e ${availablePercent}%, #f97316 ${availablePercent}% 100%)` }}>
+              <div><strong>{availablePercent}%</strong><span>Có hàng</span></div>
+            </div>
+            <div className={styles.chartLegend}>
+              <span><i className={styles.availableDot} /> Có hàng <strong>{availableModels}</strong></span>
+              <span><i className={styles.emptyDot} /> Hết hàng <strong>{outOfStock}</strong></span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
   const { token, isAdmin, status } = useAuth();
   const [selectedId, setSelectedId] = useState<string>(tables[0].id);
+  const [showVehicleStats, setShowVehicleStats] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     products: true,
@@ -404,6 +476,7 @@ export default function Home() {
 
   const selectTable = (tableId: string) => {
     setSelectedId(tableId);
+    setShowVehicleStats(false);
     setSelectedDetailId(null);
     setIsMobileMenuOpen(false);
     setFilterBrand("");
@@ -737,15 +810,26 @@ export default function Home() {
                         const table = tables.find((item) => item.id === tableId);
                         if (!table) return null;
                         return (
-                          <button
-                            key={table.id}
-                            type="button"
-                            className={`${styles.navItem} ${selectedId === table.id ? styles.active : ""}`}
-                            onClick={() => selectTable(table.id)}
-                          >
-                            <span className={styles.navIndex}>{tableIcons[table.id] ?? "🚗"}</span>
-                            <span className={styles.navText}>{tableLabels[table.id] ?? table.name}</span>
-                          </button>
+                          <div key={table.id} className={styles.navItemGroup}>
+                            <button
+                              type="button"
+                              className={`${styles.navItem} ${selectedId === table.id && !showVehicleStats ? styles.active : ""}`}
+                              onClick={() => selectTable(table.id)}
+                            >
+                              <span className={styles.navIndex}>{tableIcons[table.id] ?? "🚗"}</span>
+                              <span className={styles.navText}>{tableLabels[table.id] ?? table.name}</span>
+                            </button>
+                            {table.id === "Xe" && (
+                              <button
+                                type="button"
+                                className={`${styles.navItem} ${styles.statsNavItem} ${showVehicleStats ? styles.statsNavItemActive : ""}`}
+                                onClick={() => { setSelectedId("Xe"); setShowVehicleStats(true); setIsMobileMenuOpen(false); }}
+                              >
+                                <span className={styles.navIndex}>📊</span>
+                                <span className={styles.navText}>Thống kê</span>
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -769,7 +853,7 @@ export default function Home() {
               <button type="button" className={styles.secondaryButton} onClick={() => void router.push("/ChamSocKH/ChamSocKH")}>
                 💬 Chăm sóc khách hàng
               </button>
-              {selectedTable.id === "Xe" && (
+              {selectedTable.id === "Xe" && !showVehicleStats && (
                 <div className={styles.filterGroup}>
                   <span className={styles.filterIcon}>🏢</span>
                   <select
@@ -785,7 +869,7 @@ export default function Home() {
                   </select>
                 </div>
               )}
-              {selectedTable.id === "Xe" && (
+              {selectedTable.id === "Xe" && !showVehicleStats && (
                 <div className={styles.filterGroup}>
                   <span className={styles.filterIcon}>🚘</span>
                   <select
@@ -819,12 +903,16 @@ export default function Home() {
                   </select>
                 </div>
               )}
-              <button type="button" className={styles.primaryButton} onClick={() => openCreate()}>+ Thêm mới</button>
+              {!showVehicleStats && <button type="button" className={styles.primaryButton} onClick={() => openCreate()}>+ Thêm mới</button>}
             </div>
           </div>
 
-
-
+          {showVehicleStats && selectedTable.id === "Xe" ? (
+            <VehicleStatistics
+              vehicles={selectedTable.records}
+              brands={tableData.find((table) => table.id === "HangXe")?.records ?? []}
+            />
+          ) : <>
           {formMode && (
             <div className={`${styles.modalBackdrop} ${styles.formModalBackdrop}`} role="presentation" onMouseDown={(event) => {
               if (event.target === event.currentTarget) closeForm();
@@ -1182,6 +1270,7 @@ export default function Home() {
               </section>
             </div>
           )}
+          </>}
         </main>
       </div>
 

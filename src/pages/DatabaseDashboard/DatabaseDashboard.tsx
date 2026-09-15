@@ -632,14 +632,18 @@ export default function Home() {
         credentials: "include",
         body: JSON.stringify(valuesToSave),
       });
+      const responseData = await response.json().catch(() => null) as {
+        message?: string;
+        vehicleNotification?: { message?: string } | null;
+      } | null;
       if (!response.ok) {
-        const error = await response.json().catch(() => null);
-        throw new Error(error?.message || "Lưu dữ liệu thất bại");
+        throw new Error(responseData?.message || "Lưu dữ liệu thất bại");
       }
       await refreshTableData(formTable.id);
       setFormMode(null);
       // Hiện thông báo thêm/sửa thành công
-      showNotification(isCreate ? "Đã thêm thành công" : "Đã sửa thành công", isCreate ? "success-add" : "success-edit");
+      const vehicleMessage = formTable.id === "Xe" ? responseData?.vehicleNotification?.message : null;
+      showNotification(vehicleMessage || (isCreate ? "Đã thêm thành công" : "Đã sửa thành công"), isCreate ? "success-add" : "success-edit");
     } catch (error) {
       showNotification(error instanceof Error ? error.message : "Không thể lưu dữ liệu", "error");
     } finally {

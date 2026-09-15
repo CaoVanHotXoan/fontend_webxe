@@ -678,6 +678,22 @@
   border-color: #0f766e;
 }
 
+.otpFieldRow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.otpFieldRow input {
+  min-width: 0;
+  flex: 1;
+}
+
+.formField small {
+  color: #64748b;
+  font-size: 12px;
+}
+
 .dateTimeInput {
   color-scheme: light;
   cursor: pointer;

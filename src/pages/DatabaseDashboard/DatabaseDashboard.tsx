@@ -357,6 +357,10 @@ export default function Home() {
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [formTableId, setFormTableId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<Record<string, CellValue>>({});
+  const [originalUserEmail, setOriginalUserEmail] = useState("");
+  const [otpSentEmail, setOtpSentEmail] = useState("");
+  const [otpSending, setOtpSending] = useState(false);
+  const [userEmailOtp, setUserEmailOtp] = useState("");
   const [saving, setSaving] = useState(false);
   // Trạng thái cho thanh thông báo toast
   const [notification, setNotification] = useState<{ message: string; type: "success-add" | "success-edit" | "success-delete" | "error" } | null>(null);
@@ -443,6 +447,8 @@ export default function Home() {
   const isCombinedOrderCreate = formMode === "create" && formTable.id === "DonHang";
   const isOrderEdit = formMode === "edit" && formTable.id === "DonHang";
   const isOrderDetailForm = formTable.id === "ChiTietDonHang";
+  const normalizedFormEmail = String(formValues.Email || "").trim().toLowerCase();
+  const requiresUserEmailOtp = formTable.id === "NguoiDung" && (formMode === "create" || normalizedFormEmail !== originalUserEmail);
   const customerRecords = tableData.find((table) => table.id === "NguoiDung")?.records ?? [];
   const vehicleImages = useMemo(() => {
     const images = tableData.find((table) => table.id === "HinhAnhXe")?.records ?? [];
@@ -487,6 +493,9 @@ export default function Home() {
   const openCreate = (tableId = selectedTable.id) => {
     setFormMode("create");
     setFormTableId(tableId);
+    setOriginalUserEmail("");
+    setOtpSentEmail("");
+    setUserEmailOtp("");
     setFormValues(tableId === "DonHang" ? {
       TrangThai: "Đang xử lý",
       PhuongThucThanhToan: "Tiền mặt",
@@ -499,6 +508,9 @@ export default function Home() {
   const openEdit = (row: Record<string, CellValue>, tableId = selectedTable.id) => {
     setFormMode("edit");
     setFormTableId(tableId);
+    setOriginalUserEmail(tableId === "NguoiDung" ? String(row.Email || "").trim().toLowerCase() : "");
+    setOtpSentEmail("");
+    setUserEmailOtp("");
     setFormValues(tableId === "ChiTietDonHang" ? { ...row, MaXeCu: row.MaXe } : { ...row });
   };
 
@@ -627,6 +639,34 @@ export default function Home() {
   const closeForm = () => {
     setFormMode(null);
     setFormTableId(null);
+    setOriginalUserEmail("");
+    setOtpSentEmail("");
+    setUserEmailOtp("");
+  };
+
+  const requestUserEmailOtp = async () => {
+    if (formTable.id !== "NguoiDung" || !normalizedFormEmail) return;
+    setOtpSending(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/auth/admin/user-email/request-otp`, {
+        method: "POST",
+        headers: getCrudHeaders(),
+        credentials: "include",
+        body: JSON.stringify({
+          email: normalizedFormEmail,
+          userId: formMode === "edit" ? formValues.MaNguoiDung : 0,
+        }),
+      });
+      const data = await response.json().catch(() => null) as { message?: string } | null;
+      if (!response.ok) throw new Error(data?.message || "Không thể gửi mã OTP.");
+      setOtpSentEmail(normalizedFormEmail);
+      setUserEmailOtp("");
+      showNotification(data?.message || "Mã OTP đã được gửi đến Gmail mới.", "success-add");
+    } catch (error) {
+      showNotification(error instanceof Error ? error.message : "Không thể gửi mã OTP.", "error");
+    } finally {
+      setOtpSending(false);
+    }
   };
 
   const saveRecord = async () => {
@@ -635,6 +675,12 @@ export default function Home() {
       const isCreate = formMode === "create";
       const action = isCreate ? "create" : "edit";
       const valuesToSave = { ...formValues };
+      if (requiresUserEmailOtp) {
+        if (otpSentEmail !== normalizedFormEmail || !/^\d{6}$/.test(userEmailOtp.trim())) {
+          throw new Error("Vui lòng gửi và nhập đúng mã OTP của Gmail mới.");
+        }
+        valuesToSave.otp = userEmailOtp.trim();
+      }
       if (isCombinedOrderCreate) {
         const requiredOrderFields = ["MaNguoiDung", "TongTien"];
         const hasMissingOrderField = requiredOrderFields.some((field) => valuesToSave[field] === undefined || valuesToSave[field] === null || String(valuesToSave[field]).trim() === "");
@@ -1023,6 +1069,30 @@ export default function Home() {
                       <span>Thành tiền</span>
                       <input readOnly type="number" value={formValues.ThanhTien == null ? "" : String(formValues.ThanhTien)} />
                     </label>
+                  )}
+                  {requiresUserEmailOtp && (
+                    <div className={styles.formField}>
+                      <span>Xác thực Gmail mới</span>
+                      <div className={styles.otpFieldRow}>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="Nhập mã OTP 6 số"
+                          value={userEmailOtp}
+                          onChange={(event) => setUserEmailOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                        />
+                        <button
+                          type="button"
+                          className={styles.secondaryButton}
+                          disabled={otpSending || !/^\S+@gmail\.com$/i.test(normalizedFormEmail)}
+                          onClick={() => void requestUserEmailOtp()}
+                        >
+                          {otpSending ? "Đang gửi..." : otpSentEmail === normalizedFormEmail ? "Gửi lại OTP" : "Gửi OTP"}
+                        </button>
+                      </div>
+                      <small>OTP sẽ được gửi đến {normalizedFormEmail || "Gmail mới"}.</small>
+                    </div>
                   )}
                 </div>
                 <button type="button" className={styles.primaryButton} disabled={saving} onClick={saveRecord}>

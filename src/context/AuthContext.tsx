@@ -79,6 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       safeStorage.setItem('auth', 'true');
       safeStorage.setItem('token', newToken);
       safeStorage.setItem('profile', newUser);
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem('customer_login_ts', String(Date.now()));
+      }
       setStatus('success');
       addToast('Đăng nhập thành công', 'success');
     } catch (err) {
@@ -95,6 +98,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStatus('idle');
     // Wipe client storage completely on logout
     safeStorage.clearAll();
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem('customer_login_ts');
+    }
     addToast('Đã đăng xuất', 'success');
   }, [addToast]);
 

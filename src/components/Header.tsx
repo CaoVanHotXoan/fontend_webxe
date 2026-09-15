@@ -6,6 +6,7 @@ import { BACKEND_URL } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import HeaderWelcomeAnimation from '@/components/HeaderWelcomeAnimation';
 
 type SearchVehicle = {
   id: number;
@@ -34,6 +35,9 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertNames, setAlertNames] = useState<string[]>([]);
+  const [showWelcomeAnimation, setShowWelcomeAnimation] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [welcomeAnimationVisible, setWelcomeAnimationVisible] = useState(false);
   const [editingAlertIndex, setEditingAlertIndex] = useState<number | null>(null);
   const [editingAlertValue, setEditingAlertValue] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
@@ -209,8 +213,60 @@ export default function Header() {
     return searchVehicles.filter((vehicle) => vehicle.title.toLowerCase().includes(normalizedTerm)).slice(0, 6);
   }, [searchTerm, searchVehicles]);
 
+  useEffect(() => {
+    if (!isCustomer) {
+      setShowWelcomeAnimation(false);
+      setWelcomeAnimationVisible(false);
+      return;
+    }
+
+    if (typeof window === 'undefined') return;
+
+    const loginStamp = Number(window.sessionStorage.getItem('customer_login_ts') || '0');
+    if (!loginStamp) {
+      setShowWelcomeAnimation(false);
+      setWelcomeAnimationVisible(false);
+      return;
+    }
+
+    const elapsed = Date.now() - loginStamp;
+    if (elapsed > 30000) {
+      setShowWelcomeAnimation(false);
+      setWelcomeAnimationVisible(false);
+      return;
+    }
+
+    setShowWelcomeAnimation(true);
+    setWelcomeAnimationVisible(true);
+
+    const hideTimer = window.setTimeout(() => {
+      setWelcomeAnimationVisible(false);
+      window.setTimeout(() => {
+        setShowWelcomeAnimation(false);
+      }, 700);
+    }, 7000);
+
+    return () => {
+      window.clearTimeout(hideTimer);
+    };
+  }, [isCustomer, router.asPath]);
+
+  const handleSkipWelcomeAnimation = () => {
+    setWelcomeAnimationVisible(false);
+    window.setTimeout(() => {
+      setShowWelcomeAnimation(false);
+    }, 500);
+  };
+
   return (
     <>
+      {showWelcomeAnimation && (
+        <HeaderWelcomeAnimation
+          isVisible={welcomeAnimationVisible}
+          username={user?.username || user?.name || 'Khách hàng'}
+          onSkip={handleSkipWelcomeAnimation}
+        />
+      )}
       <LoadingSpinner isLoading={isCatalogLoading} label="Đang tải dữ liệu xe" />
       <header className="header-container">
       {/* Header Top: Logo, Search, Icons, Profile */}

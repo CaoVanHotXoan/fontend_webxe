@@ -341,7 +341,370 @@
   font-size: 0.85rem;
 }
 
-/* Header trong suốt với chữ và icon màu trắng nổi bật trên mọi giao diện. */
+/* ==================== HEADER WELCOME ANIMATION ==================== */
+.header-welcome-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 94px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.9), rgba(255, 255, 255, 0.96));
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  transition: opacity 0.5s ease;
+}
+
+.header-welcome-track {
+  position: relative;
+  width: min(100%, 1000px);
+  height: 100%;
+  overflow: hidden;
+}
+
+.header-welcome-scene-group {
+  position: absolute;
+  left: -260px;
+  bottom: 6px;
+  width: 620px;
+  height: 120px;
+  animation: welcomeMenuCarDrive 7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.header-welcome-moving-pair {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.8rem;
+  width: max-content;
+  transform-origin: left center;
+  animation: welcomeMenuTextFollow 7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.header-welcome-gust {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.header-welcome-gust-streak {
+  position: absolute;
+  left: -20%;
+  top: 40px;
+  width: 180px;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(148,163,184,0), rgba(96,165,250,0.38), rgba(14,116,144,0.12), rgba(148,163,184,0));
+  opacity: 0;
+  animation: welcomeMenuWind 1.5s ease-in-out infinite;
+}
+
+.header-welcome-gust-streak:nth-child(1) { top: 26px; }
+.header-welcome-gust-streak:nth-child(2) { top: 42px; }
+.header-welcome-gust-streak:nth-child(3) { top: 58px; }
+.header-welcome-gust-streak:nth-child(4) { top: 30px; }
+.header-welcome-gust-streak:nth-child(5) { top: 48px; }
+.header-welcome-gust-streak:nth-child(6) { top: 62px; }
+.header-welcome-gust-streak:nth-child(7) { top: 36px; }
+
+.header-welcome-car {
+  position: absolute;
+  left: 0;
+  bottom: 10px;
+  width: 290px;
+  height: 90px;
+  filter: drop-shadow(0 16px 30px rgba(15, 23, 42, 0.14));
+}
+
+.header-welcome-body {
+  position: absolute;
+  inset: 0;
+}
+
+.header-welcome-body::before {
+  content: "";
+  position: absolute;
+  left: 28px;
+  top: 26px;
+  width: 164px;
+  height: 30px;
+  border-radius: 26px 18px 18px 16px;
+  background: linear-gradient(90deg, #f8fafc 0%, #e2e8f0 32%, #cbd5e1 100%);
+  transform: skewX(-12deg);
+  box-shadow: inset 0 -4px 0 rgba(15, 23, 42, 0.12);
+}
+
+.header-welcome-body::after {
+  content: "";
+  position: absolute;
+  left: 124px;
+  top: 8px;
+  width: 52px;
+  height: 16px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(148,163,184,0.7));
+  box-shadow: 0 0 10px rgba(255,255,255,0.7);
+}
+
+.header-welcome-nose {
+  position: absolute;
+  right: 12px;
+  top: 31px;
+  width: 94px;
+  height: 26px;
+  border-radius: 0 28px 20px 0;
+  background: linear-gradient(90deg, #ef4444 0%, #f97316 45%, #dc2626 100%);
+  transform: skewX(-12deg);
+  box-shadow: inset -10px 0 0 rgba(255,255,255,0.18), 0 8px 16px rgba(239, 68, 68, 0.18);
+}
+
+.header-welcome-cockpit {
+  position: absolute;
+  left: 98px;
+  top: 8px;
+  width: 98px;
+  height: 40px;
+  border-radius: 22px 18px 16px 18px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 35%, #475569 100%);
+  border: 2px solid rgba(148, 163, 184, 0.9);
+  transform: skewX(-12deg);
+  box-shadow: inset 0 0 0 3px rgba(15, 23, 42, 0.9);
+}
+
+.header-welcome-cockpit::before {
+  content: "";
+  position: absolute;
+  inset: 8px 12px 9px 8px;
+  border-radius: 14px 10px 12px 10px;
+  background: linear-gradient(135deg, rgba(148,163,184,0.85), rgba(15,23,42,0.8));
+}
+
+.header-welcome-spoiler {
+  position: absolute;
+  left: 142px;
+  top: 48px;
+  width: 76px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(148,163,184,0.7), rgba(15,23,42,0.9));
+}
+
+.header-welcome-wing {
+  position: absolute;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(148,163,184,0.7), rgba(15,23,42,0.9));
+}
+
+.header-welcome-wing-front {
+  left: 40px;
+  top: 48px;
+  width: 92px;
+  transform: skewX(-18deg);
+}
+
+.header-welcome-wing-rear {
+  left: 154px;
+  top: 50px;
+  width: 90px;
+  transform: skewX(-18deg);
+}
+
+.header-welcome-tyre {
+  position: absolute;
+  bottom: 0;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #0f172a 0 24%, #111827 26% 38%, #374151 39% 61%, #0f172a 63% 100%);
+  box-shadow: inset 0 0 0 7px rgba(255,255,255,0.07), 0 0 0 2px rgba(15,23,42,0.8);
+  animation: welcomeMenuTyreIdle 1s ease-in-out infinite alternate;
+}
+
+.header-welcome-tyre-left { left: 52px; }
+.header-welcome-tyre-right { right: 42px; }
+
+.header-welcome-rim {
+  position: absolute;
+  bottom: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.95) 0 16%, rgba(148,163,184,0.85) 18% 42%, rgba(15,23,42,0.8) 43% 100%);
+}
+
+.header-welcome-rim-left { left: 68px; }
+.header-welcome-rim-right { right: 58px; }
+
+.header-welcome-light {
+  position: absolute;
+  right: -4px;
+  top: 36px;
+  width: 20px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,0), #fef3c7 55%, #fef3c7);
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.85);
+}
+
+.header-welcome-dust {
+  position: absolute;
+  right: -10px;
+  bottom: 6px;
+  width: 440px;
+  height: 86px;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.header-welcome-copy {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 18px;
+  animation: welcomeMenuTextReveal 0.9s ease-out 2.2s both;
+}
+
+.header-welcome-kicker {
+  font-size: 0.68rem;
+  letter-spacing: 0.22rem;
+  font-weight: 800;
+  color: rgba(59, 130, 246, 0.8);
+  text-transform: uppercase;
+}
+
+.header-welcome-text {
+  font-size: clamp(1.05rem, 2vw, 1.7rem);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: #0f172a;
+  font-weight: 900;
+  white-space: nowrap;
+  text-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.header-welcome-skip {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.75);
+  color: #0f172a;
+  padding: 0.42rem 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 2;
+}
+
+@keyframes welcomeMenuCarDrive {
+  0% {
+    transform: translateX(0) scale(0.8);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  52% {
+    transform: translateX(36vw) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(42vw) scale(1.02);
+    opacity: 1;
+  }
+}
+
+@keyframes welcomeMenuTextFollow {
+  0% {
+    transform: translateX(0) scale(0.8);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  52% {
+    transform: translateX(36vw) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(42vw) scale(1.02);
+    opacity: 1;
+  }
+}
+
+@keyframes welcomeMenuWind {
+  0% {
+    opacity: 0;
+    transform: translateX(-10%) scaleX(0.5);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  60% {
+    opacity: 0.8;
+    transform: translateX(32%) scaleX(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(80%) scaleX(1.5);
+  }
+}
+
+@keyframes welcomeMenuTyreIdle {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  100% {
+    transform: translateY(2px) rotate(1deg);
+  }
+}
+
+@keyframes welcomeMenuTextReveal {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(14px) scale(0.96);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@media (max-width: 700px) {
+  .header-welcome-banner {
+    height: 82px;
+  }
+
+  .header-welcome-copy {
+    left: 48%;
+    gap: 0.35rem;
+  }
+
+  .header-welcome-kicker {
+    letter-spacing: 0.15rem;
+  }
+
+  .header-welcome-text {
+    font-size: 0.8rem;
+    white-space: normal;
+  }
+
+  .header-welcome-skip {
+    right: 0.5rem;
+    padding: 0.32rem 0.6rem;
+    font-size: 0.62rem;
+  }
+}
 .header-container {
   background: transparent;
   color: #ffffff;

@@ -240,6 +240,7 @@ export default function ProfilePage() {
 
   // Xóa phiên đăng nhập bằng domain logoutUser
   const handleLogout = () => {
+    if (typeof window !== 'undefined') sessionStorage.removeItem('profileReturnPath');
     logoutUser();
     router.replace('/Login/Login');
   };

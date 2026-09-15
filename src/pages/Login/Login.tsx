@@ -96,12 +96,11 @@ export default function LoginPage() {
           throw new Error('Máy chủ chưa trả về phiên đăng nhập hợp lệ.');
         }
         loginUser(data.token, data.user);
-        const returnUrl = typeof router.query.returnUrl === 'string' && router.query.returnUrl.startsWith('/')
+        const isAdmin = data.user.role?.toLowerCase() === 'admin' || data.user.roleId === 1;
+        const returnUrl = isAdmin && typeof router.query.returnUrl === 'string' && router.query.returnUrl.startsWith('/')
           ? router.query.returnUrl
           : null;
-        const destination = returnUrl || (data.user.role?.toLowerCase() === 'admin' || data.user.roleId === 1
-          ? '/DatabaseDashboard/DatabaseDashboard'
-          : '/');
+        const destination = returnUrl || (isAdmin ? '/DatabaseDashboard/DatabaseDashboard' : '/');
         await router.replace(destination);
       });
       return;

@@ -358,9 +358,11 @@ export default function Home() {
   const [formTableId, setFormTableId] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<Record<string, CellValue>>({});
   const [originalUserEmail, setOriginalUserEmail] = useState("");
+  const [originalUserPassword, setOriginalUserPassword] = useState("");
   const [otpSentEmail, setOtpSentEmail] = useState("");
   const [otpSending, setOtpSending] = useState(false);
   const [userEmailOtp, setUserEmailOtp] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   // Trạng thái cho thanh thông báo toast
   const [notification, setNotification] = useState<{ message: string; type: "success-add" | "success-edit" | "success-delete" | "error" } | null>(null);
@@ -448,7 +450,9 @@ export default function Home() {
   const isOrderEdit = formMode === "edit" && formTable.id === "DonHang";
   const isOrderDetailForm = formTable.id === "ChiTietDonHang";
   const normalizedFormEmail = String(formValues.Email || "").trim().toLowerCase();
-  const requiresUserEmailOtp = formTable.id === "NguoiDung" && (formMode === "create" || normalizedFormEmail !== originalUserEmail);
+  const userEmailChanged = normalizedFormEmail !== originalUserEmail;
+  const userPasswordChanged = String(formValues.MatKhau || "") !== originalUserPassword;
+  const requiresUserEmailOtp = formTable.id === "NguoiDung" && (formMode === "create" || userEmailChanged || userPasswordChanged);
   const customerRecords = tableData.find((table) => table.id === "NguoiDung")?.records ?? [];
   const vehicleImages = useMemo(() => {
     const images = tableData.find((table) => table.id === "HinhAnhXe")?.records ?? [];
@@ -494,8 +498,10 @@ export default function Home() {
     setFormMode("create");
     setFormTableId(tableId);
     setOriginalUserEmail("");
+    setOriginalUserPassword("");
     setOtpSentEmail("");
     setUserEmailOtp("");
+    setPasswordVisible(false);
     setFormValues(tableId === "DonHang" ? {
       TrangThai: "Đang xử lý",
       PhuongThucThanhToan: "Tiền mặt",
@@ -509,8 +515,10 @@ export default function Home() {
     setFormMode("edit");
     setFormTableId(tableId);
     setOriginalUserEmail(tableId === "NguoiDung" ? String(row.Email || "").trim().toLowerCase() : "");
+    setOriginalUserPassword(tableId === "NguoiDung" ? String(row.MatKhau || "") : "");
     setOtpSentEmail("");
     setUserEmailOtp("");
+    setPasswordVisible(false);
     setFormValues(tableId === "ChiTietDonHang" ? { ...row, MaXeCu: row.MaXe } : { ...row });
   };
 
@@ -640,8 +648,10 @@ export default function Home() {
     setFormMode(null);
     setFormTableId(null);
     setOriginalUserEmail("");
+    setOriginalUserPassword("");
     setOtpSentEmail("");
     setUserEmailOtp("");
+    setPasswordVisible(false);
   };
 
   const requestUserEmailOtp = async () => {
@@ -661,7 +671,7 @@ export default function Home() {
       if (!response.ok) throw new Error(data?.message || "Không thể gửi mã OTP.");
       setOtpSentEmail(normalizedFormEmail);
       setUserEmailOtp("");
-      showNotification(data?.message || "Mã OTP đã được gửi đến Gmail mới.", "success-add");
+      showNotification(`Mã OTP đã gửi đến Gmail: ${normalizedFormEmail}`, "success-add");
     } catch (error) {
       showNotification(error instanceof Error ? error.message : "Không thể gửi mã OTP.", "error");
     } finally {
@@ -972,6 +982,7 @@ export default function Home() {
                   {formColumns.map((column) => {
                     const fkConfig = foreignKeyConfig[column];
                     const isForeignKey = fkConfig && fkConfig.refTable !== formTable.id;
+                    const isPasswordColumn = column === "MatKhau";
                     const isOrderStatus = (isCombinedOrderCreate || isOrderEdit) && column === "TrangThai";
                     const isPaymentMethod = (isCombinedOrderCreate || isOrderEdit) && column === "PhuongThucThanhToan";
                     const isOrderDetailVehicle = isOrderDetailForm && column === "MaXe";
@@ -1031,10 +1042,28 @@ export default function Home() {
                               );
                             })}
                           </select>
+                        ) : isPasswordColumn ? (
+                          <div className={styles.passwordFieldRow}>
+                            <input
+                              type={passwordVisible ? "text" : "password"}
+                              value={formValues[column] == null ? "" : String(formValues[column])}
+                              disabled={formMode === "edit" && (identityColumns[formTable.id] ?? []).includes(column)}
+                              onChange={(event) => updateFormValue(column, event.target.value)}
+                            />
+                            <button
+                              type="button"
+                              className={styles.passwordToggle}
+                              onClick={() => setPasswordVisible((visible) => !visible)}
+                              aria-label={passwordVisible ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                              title={passwordVisible ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                            >
+                              {passwordVisible ? "🙈" : "👁"}
+                            </button>
+                          </div>
                         ) : (
                           <input
                             className={column === "NgayDang" ? styles.dateTimeInput : undefined}
-                            type={column.includes("Ngay") ? "datetime-local" : column === "MatKhau" ? "password" : column === "LaAnhChinh" ? "checkbox" : "text"}
+                            type={column.includes("Ngay") ? "datetime-local" : column === "LaAnhChinh" ? "checkbox" : "text"}
                             step={column.includes("Ngay") ? 60 : undefined}
                             checked={column === "LaAnhChinh" ? Boolean(formValues[column]) : undefined}
                             value={column.includes("Ngay") ? getDateTimeLocalValue(formValues[column]) : formValues[column] == null ? "" : String(formValues[column])}
@@ -1072,7 +1101,7 @@ export default function Home() {
                   )}
                   {requiresUserEmailOtp && (
                     <div className={styles.formField}>
-                      <span>Xác thực Gmail mới</span>
+                      <span>Xác thực thay đổi tài khoản</span>
                       <div className={styles.otpFieldRow}>
                         <input
                           type="text"
@@ -1091,7 +1120,7 @@ export default function Home() {
                           {otpSending ? "Đang gửi..." : otpSentEmail === normalizedFormEmail ? "Gửi lại OTP" : "Gửi OTP"}
                         </button>
                       </div>
-                      <small>OTP sẽ được gửi đến {normalizedFormEmail || "Gmail mới"}.</small>
+                      <small>OTP sẽ được gửi đến {normalizedFormEmail || "Gmail của người dùng"}.</small>
                     </div>
                   )}
                 </div>

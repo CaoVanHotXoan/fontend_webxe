@@ -28,11 +28,18 @@ type ApiType = { MaLoai: number; TenLoai: string };
 type VehicleResponse = { Xe?: ApiVehicle[]; HinhAnhXe?: ApiVehicleImage[]; HangXe?: ApiBrand[]; LoaiXe?: ApiType[] };
 
 function normalizeVehicleType(value: string): Vehicle['type'] {
-  const type = value.toLowerCase();
-  if (type.includes('côn') || type.includes('moto') || type.includes('mô tô')) return 'Xe moto';
-  if (type.includes('ga') || type.includes('máy')) return 'Xe máy';
-  if (type.includes('hơi') || type.includes('ô tô')) return 'Ô tô';
-  return undefined;
+  const type = value.trim();
+  return type || undefined;
+}
+
+function matchesTypeQuery(type: string, query: string) {
+  const normalizedType = type.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const normalizedQuery = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (normalizedType === normalizedQuery) return true;
+  if (normalizedQuery === 'xe moto' || normalizedQuery === 'mo to') return normalizedType.includes('moto') || normalizedType.includes('mo to') || normalizedType.includes('con');
+  if (normalizedQuery === 'xe may') return normalizedType.includes('may') || normalizedType.includes('ga');
+  if (normalizedQuery === 'o to') return normalizedType.includes('o to') || normalizedType.includes('hoi');
+  return false;
 }
 
 function mapApiVehicles(data: VehicleResponse): Vehicle[] {
@@ -85,20 +92,20 @@ export default function MuaBanXePage() {
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
 
-  // Đồng bộ loại xe trên URL với bộ lọc để các icon trên Header mở đúng danh sách.
+  // Đồng bộ loại xe trên URL với tên loại thật từ catalog để các icon Header vẫn hoạt động.
   useEffect(() => {
     if (!router.isReady) return;
 
     const queryType = router.query.type;
     const selectedType = Array.isArray(queryType) ? queryType[0] : queryType;
-    const validTypes: NonNullable<Vehicle['type']>[] = ['Ô tô', 'Xe máy', 'Xe moto'];
-    const typeFilter = selectedType && validTypes.includes(selectedType as NonNullable<Vehicle['type']>)
-      ? [selectedType as NonNullable<Vehicle['type']>]
-      : [];
+    const typeFromCatalog = selectedType
+      ? vehicles.map((vehicle) => vehicle.type).find((type): type is NonNullable<Vehicle['type']> => Boolean(type && matchesTypeQuery(type, selectedType)))
+      : undefined;
+    const typeFilter = typeFromCatalog ? [typeFromCatalog] : [];
 
     setFilters((current) => ({ ...emptyFilters, ...current, type: typeFilter }));
     setOpenFilter(typeFilter.length ? 'type' : null);
-  }, [router.isReady, router.query.type]);
+  }, [router.isReady, router.query.type, vehicles]);
 
   useEffect(() => {
     setLoading(true);

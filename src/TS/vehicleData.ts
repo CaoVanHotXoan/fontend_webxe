@@ -1,4 +1,4 @@
-export type VehicleType = 'Ô tô' | 'Xe máy' | 'Xe moto';
+export type VehicleType = string;
 export type FuelType = 'Xăng' | 'Dầu diesel' | 'Điện' | 'Hybrid';
 
 export type Vehicle = {

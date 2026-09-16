@@ -59,9 +59,16 @@ function renderMessage(text: string) {
 }
 
 function formatMessageTime(value: string) {
+  const sqlDateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T]|$)/);
+  if (sqlDateMatch) return `${sqlDateMatch[3]}/${sqlDateMatch[2]}/${sqlDateMatch[1]}`;
   const normalizedValue = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : value.replace(' ', 'T') + '+07:00';
   const date = new Date(normalizedValue);
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('vi-VN');
+  return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat('vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
 }
 
 export default function ChatBot({ vehicles }: { vehicles: Vehicle[] }) {

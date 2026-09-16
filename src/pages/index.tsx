@@ -85,8 +85,9 @@ const InteractiveHeroBanner: React.FC = () => {
           <div className="inline-block">
             <span className="text-sm font-semibold uppercase tracking-widest text-emerald-400">✨ Featured Offer</span>
           </div>
-          <h1 className={`${styles['hero-title']} text-5xl font-bold leading-tight tracking-tight text-white md:text-7xl`}>
-            CHẤT LƯỢNG VƯỢT TRỘI / ĐẲNG CẤP DẪN ĐẦU
+          <h1 className={`${styles['hero-title']} font-bold leading-tight tracking-tight text-white`}>
+            <span>CHẤT LƯỢNG VƯỢT TRỘI</span>
+            <span>ĐẲNG CẤP DẪN ĐẦU</span>
           </h1>
           <p className={`${styles['hero-desc']} text-xl font-light text-gray-200 md:text-2xl`}>{bannerData.desc}</p>
           <Link
@@ -122,19 +123,48 @@ type ContentItem = { id: number; title: string; image: string; price?: string };
 // Small content slider component (reusable)
 function ContentSlider({ items, hasPrice }: { items: ContentItem[]; hasPrice?: boolean }){
   const [startIndex, setStartIndex] = React.useState(0);
+  const [isMobile, setIsMobile] = React.useState(false);
+  const [expanded, setExpanded] = React.useState(false);
   const maxVisible = 3;
+
+  React.useEffect(() => {
+    const updateViewport = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setExpanded(false);
+      }
+    };
+
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    return () => window.removeEventListener('resize', updateViewport);
+  }, []);
+
+  React.useEffect(() => {
+    setExpanded(false);
+  }, [items.length]);
 
   const handleNext = () => setStartIndex(prev => (prev < items.length - maxVisible ? prev + 1 : 0));
   const handlePrev = () => setStartIndex(prev => (prev > 0 ? prev - 1 : Math.max(0, items.length - maxVisible)));
 
+  const visibleItems = isMobile
+    ? expanded ? items : items.slice(0, 2)
+    : items.slice(startIndex, startIndex + maxVisible);
+
   return (
     <div className={styles['news-slider']}>
-      <button className={`${styles['slider-arrow']} ${styles['left']}`} onClick={handlePrev} aria-label="prev">◀</button>
-      <div className={styles['news-track']} style={{ transform: `translateX(calc(-${startIndex * (100/3)}%))` }}>
-        {items.map((it, idx)=>{
-          const isActive = idx >= startIndex && idx < startIndex + maxVisible;
+      {!isMobile && (
+        <button className={`${styles['slider-arrow']} ${styles['left']}`} onClick={handlePrev} aria-label="prev">◀</button>
+      )}
+      <div
+        className={`${styles['news-track']} ${isMobile ? styles['news-track-mobile'] : ''}`}
+        style={!isMobile ? { transform: `translateX(calc(-${startIndex * (100/3)}%))` } : undefined}
+      >
+        {visibleItems.map((it, idx)=>{
+          const isActive = !isMobile || idx < 2;
           return (
-            <Link key={it.id} href={hasPrice ? `/ChiTietXe/ChiTietXe?id=${it.id}` : `/TinTuc/ChiTietTin?id=${it.id}`} className={`${styles['news-card']} ${isActive?styles.active:''}`}>
+            <Link key={it.id} href={hasPrice ? `/ChiTietXe/ChiTietXe?id=${it.id}` : `/TinTuc/ChiTietTin?id=${it.id}`} className={`${styles['news-card']} ${isActive ? styles.active : ''} ${isMobile ? styles['news-card-mobile'] : ''}`}>
               <div className={styles['news-img-container']}><img src={it.image} className={styles['news-img']} alt={it.title} /></div>
               <div className={styles['news-content']}>
                 <h3 className={styles['news-text']}>{it.title}</h3>
@@ -144,7 +174,14 @@ function ContentSlider({ items, hasPrice }: { items: ContentItem[]; hasPrice?: b
           );
         })}
       </div>
-      <button className={`${styles['slider-arrow']} ${styles['right']}`} onClick={handleNext} aria-label="next">▶</button>
+      {!isMobile && (
+        <button className={`${styles['slider-arrow']} ${styles['right']}`} onClick={handleNext} aria-label="next">▶</button>
+      )}
+      {isMobile && items.length > 2 && (
+        <button type="button" className={styles['mobile-more-btn']} onClick={() => setExpanded(prev => !prev)}>
+          {expanded ? 'Thu gọn' : 'Xem thêm'}
+        </button>
+      )}
     </div>
   );
 }

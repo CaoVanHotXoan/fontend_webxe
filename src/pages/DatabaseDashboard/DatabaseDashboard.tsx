@@ -247,12 +247,33 @@ const getDateTimeLocalValue = (value: CellValue) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
+const formatOrderDate = (value: CellValue) => {
+  if (value == null || value === "") return "-";
+  const rawValue = String(value);
+  const normalizedValue = /(?:Z|[+-]\d{2}:?\d{2})$/.test(rawValue)
+    ? rawValue
+    : rawValue.replace(" ", "T") + "+07:00";
+  const date = new Date(normalizedValue);
+  if (Number.isNaN(date.getTime())) return rawValue;
+  return new Intl.DateTimeFormat("vi-VN", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(date).replace(", ", " ");
+};
+
 const imageColumns = new Set(["HinhAnh", "Logo", "DuongDanAnh"]);
 
 const renderCellValue = (column: string, value: CellValue, relatedName?: string) => {
   if (imageColumns.has(column) && value) {
     return <img className={styles.tableImage} src={String(value)} alt={column} />;
   }
+  if (column === "NgayDat") return formatOrderDate(value);
   return relatedName ?? (typeof value === "boolean" ? (value ? "Có" : "Không") : String(value ?? "-"));
 };
 

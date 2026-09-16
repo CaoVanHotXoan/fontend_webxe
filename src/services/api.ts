@@ -14,7 +14,13 @@ export async function apiFetch<T = unknown>(url: string, options: RequestInit = 
     credentials: 'include',
   });
 
-  const data = await response.json().catch(() => null);
+  const responseText = await response.text();
+  let data: { message?: string; detail?: string } | null = null;
+  try {
+    data = responseText ? JSON.parse(responseText) as { message?: string; detail?: string } : null;
+  } catch {
+    data = null;
+  }
   if (response.status === 401) {
     if (typeof window !== 'undefined' && !window.location.pathname.toLowerCase().includes('/login')) {
       window.location.assign('/Login/Login');
@@ -23,10 +29,11 @@ export async function apiFetch<T = unknown>(url: string, options: RequestInit = 
   }
 
   if (!response.ok) {
-    throw new Error(data?.message || `HTTP ${response.status}`);
+    const responseMessage = data?.detail || data?.message || responseText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    throw new Error(responseMessage || `HTTP ${response.status}`);
   }
 
-  return data as T;
+  return (data ?? {}) as T;
 }
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
@@ -34,6 +41,6 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   return fetch(fullUrl, { ...options, credentials: 'include' });
 }
 
-export async function apiRequest<T = any>(url: string, options: RequestInit = {}): Promise<T> {
+export async function apiRequest<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
   return apiFetch<T>(url, options);
 }

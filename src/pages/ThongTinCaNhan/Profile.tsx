@@ -213,15 +213,13 @@ export default function ProfilePage() {
       try {
         const endpoint = passwordStep === 'form' ? '/password/change/request-otp' : '/password/change';
         const body = passwordStep === 'form'
-          ? undefined
+          ? JSON.stringify({ currentPassword: passwords.current })
           : JSON.stringify({ currentPassword: passwords.current, newPassword: passwords.next, otp: passwordOtp });
-        const response = await fetch(`/api/backend/auth${endpoint}`, {
+        const data = await apiFetch<{ message?: string }>(`/auth${endpoint}`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+          headers: { Authorization: `Bearer ${token}` },
           body,
         });
-        const data = await response.json() as { message?: string };
-        if (!response.ok) throw new Error(data.message || 'Không thể xử lý yêu cầu.');
         if (passwordStep === 'form') {
           setPasswordStep('otp');
           showMessage(data.message || 'Mã xác nhận đã được gửi đến Gmail.');

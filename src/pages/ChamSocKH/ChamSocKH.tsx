@@ -10,6 +10,7 @@ type Conversation = {
   id: number;
   name: string;
   initials: string;
+  image?: string | null;
   color: string;
   preview: string;
   time: string;
@@ -23,6 +24,7 @@ type ApiConversation = {
   MaKhachHang: number;
   TrangThai: string;
   TenKhachHang: string;
+  HinhAnhKhachHang?: string | null;
   TinNhanCuoi?: string | null;
   ThoiGianTinNhanCuoi?: string | null;
   TinChuaXem?: number;
@@ -165,6 +167,7 @@ export default function ChamSocKHPage() {
         id: conversation.MaCuocHoiThoai,
         name: conversation.TenKhachHang,
         initials: conversation.TenKhachHang.split(" ").map((part) => part[0]).join("").slice(-2).toUpperCase(),
+        image: conversation.HinhAnhKhachHang,
         color: ["#f59e0b", "#0ea5e9", "#8b5cf6", "#10b981"][index % 4],
         preview: conversation.TinNhanCuoi || "Chưa có tin nhắn",
         time: conversation.ThoiGianTinNhanCuoi ? formatMessageTime(conversation.ThoiGianTinNhanCuoi) : "Mới",
@@ -292,7 +295,7 @@ export default function ChamSocKHPage() {
           <div className={styles.conversationList}>
             {filteredConversations.map((conversation) => (
               <button key={conversation.id} type="button" className={`${styles.conversation} ${selectedConversation?.id === conversation.id ? styles.selectedConversation : ""}`} onClick={() => selectConversation(conversation.id)}>
-                <span className={styles.avatar} style={{ backgroundColor: conversation.color }}>{conversation.initials}</span>
+                {conversation.image ? <img className={styles.avatar} src={conversation.image} alt={`Ảnh đại diện của ${conversation.name}`} /> : <span className={styles.avatar} style={{ backgroundColor: conversation.color }}>{conversation.initials}</span>}
                 <span className={`${styles.conversationCopy} ${conversation.unread ? styles.unreadConversation : ""}`}>
                   <span className={styles.conversationName}>{conversation.name}</span>
                   <span className={styles.conversationPreview}>{conversation.preview}</span>
@@ -313,7 +316,7 @@ export default function ChamSocKHPage() {
           {selectedConversation ? <>
           <header className={styles.chatHeader}>
             <div className={styles.profileLine}>
-              <span className={styles.avatar} style={{ backgroundColor: selectedConversation.color }}>{selectedConversation.initials}</span>
+              {selectedConversation.image ? <img className={styles.avatar} src={selectedConversation.image} alt={`Ảnh đại diện của ${selectedConversation.name}`} /> : <span className={styles.avatar} style={{ backgroundColor: selectedConversation.color }}>{selectedConversation.initials}</span>}
               <div>
                 <h2>{selectedConversation.name}</h2>
                 <p><span className={`${styles.onlineDot} ${selectedConversation.online ? "" : styles.offlineDot}`} /> {selectedConversation.online ? "Đang hoạt động" : "Đang offline"}</p>

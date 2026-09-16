@@ -31,6 +31,45 @@ type ApiConversation = {
 
 type ApiMessage = { MaTinNhan: number; MaNguoiGui: number; NoiDung: string; ThoiGian: string };
 
+const suggestedQuestions = [
+  {
+    title: "Phân loại phương tiện",
+    questions: [
+      "Anh/Chị đang quan tâm đến dòng xe nào trên website bên em ạ (Ô tô, Xe máy hay Mô tô phân khối lớn)?",
+      "Anh/Chị đang tìm xe phục vụ đi lại hàng ngày, đi phượt / dã ngoại, hay chạy dịch vụ ạ?",
+    ],
+  },
+  {
+    title: "Yêu cầu & cấu hình",
+    questions: [
+      "Anh/Chị ưu tiên xe mới 100% hay dòng xe lướt / đã qua sử dụng để tối ưu chi phí?",
+      "Anh/Chị có đang nhắm tới hãng xe hoặc mẫu xe cụ thể nào trên hệ thống bên em chưa ạ?",
+      "Anh/Chị cần xe 4-5 chỗ gọn gàng hay dòng 7 chỗ / Bán tải ạ?",
+      "Anh/Chị ưu tiên xe tay ga, xe số hay xe côn tay / mô tô phân khối lớn ạ?",
+    ],
+  },
+  {
+    title: "Ngân sách & thanh toán",
+    questions: [
+      "Khoảng ngân sách dự kiến của Anh/Chị dành cho xe là bao nhiêu để em lọc nhanh các mẫu phù hợp nhất ạ?",
+      "Anh/Chị dự tính thanh toán trả thẳng hay cần bên em hỗ trợ làm hồ sơ trả góp qua ngân hàng ạ?",
+    ],
+  },
+  {
+    title: "Trải nghiệm & dịch vụ",
+    questions: [
+      "Anh/Chị đã trải nghiệm lái thử mẫu xe này chưa? Em hỗ trợ đặt lịch hẹn Anh/Chị qua cửa hàng xem xe và lái thử trực tiếp nhé?",
+      "Anh/Chị có cần em gửi thêm thông tin chi tiết về Chính sách bảo hành và Đổi trả của cửa hàng qua để mình yên tâm cân nhắc không ạ?",
+    ],
+  },
+  {
+    title: "Thông tin chốt sale",
+    questions: [
+      "Anh/Chị cho em xin SĐT hoặc Zalo để em gửi bảng giá lăn bánh chi tiết kèm các ưu đãi mới nhất nhé?",
+    ],
+  },
+];
+
 function formatMessageTime(value: string) {
   const normalizedValue = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : value.replace(" ", "T") + "+07:00";
   const date = new Date(normalizedValue);
@@ -97,6 +136,8 @@ export default function ChamSocKHPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [openSuggestion, setOpenSuggestion] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("Tất cả");
   const conversationLoadSequence = useRef(0);
   const messageLoadSequence = useRef(0);
@@ -180,17 +221,16 @@ export default function ChamSocKHPage() {
     setConversations((current) => current.map((conversation) => conversation.id === id ? { ...conversation, unread: 0 } : conversation));
   };
 
-  const sendMessage = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const text = message.trim();
+  const sendMessageText = (text: string) => {
     if (!text) return;
     if (token && isAdmin) {
+      setIsSending(true);
       void fetch(`${BACKEND_URL}/chat/messages`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ conversationId: selectedId, message: text }),
-      }).then(() => setMessage("")).catch(() => undefined);
+      }).then(() => setMessage("")).catch(() => undefined).finally(() => setIsSending(false));
       return;
     }
     const time = formatMessageTime(new Date().toISOString());
@@ -201,6 +241,11 @@ export default function ChamSocKHPage() {
       messages: [...conversation.messages, { id: Date.now(), text, time, mine: true }],
     } : conversation));
     setMessage("");
+  };
+
+  const sendMessage = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    sendMessageText(message.trim());
   };
 
   return (
@@ -284,13 +329,39 @@ export default function ChamSocKHPage() {
             </div>
           </div>
 
+          <section className={styles.suggestions} aria-label="Câu hỏi gợi ý">
+            <div className={styles.suggestionsHeader}>
+              <strong>Câu hỏi gợi ý</strong>
+              <span>Nhấn để gửi nhanh cho khách hàng</span>
+            </div>
+            <div className={styles.suggestionGroups}>
+              {suggestedQuestions.map((group) => (
+                <div key={group.title} className={styles.suggestionGroup}>
+                  <button
+                    type="button"
+                    className={`${styles.suggestionTitle} ${openSuggestion === group.title ? styles.openSuggestion : ""}`}
+                    aria-expanded={openSuggestion === group.title}
+                    onClick={() => setOpenSuggestion((current) => current === group.title ? null : group.title)}
+                  >
+                    {group.title}<span aria-hidden="true">⌃</span>
+                  </button>
+                  {openSuggestion === group.title && <div className={styles.suggestionList}>
+                    {group.questions.map((question) => (
+                      <button key={question} type="button" disabled={isSending} onClick={() => sendMessageText(question)}>{question}</button>
+                    ))}
+                  </div>}
+                </div>
+              ))}
+            </div>
+          </section>
+
           <form className={styles.composer} onSubmit={sendMessage}>
             <div className={styles.composerTools}>
               <button type="button" aria-label="Đính kèm tệp" title="Đính kèm tệp">＋</button>
               <button type="button" aria-label="Thêm hình ảnh" title="Thêm hình ảnh">▣</button>
             </div>
             <input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Nhập tin nhắn hỗ trợ..." aria-label="Nội dung tin nhắn" />
-            <button className={styles.sendButton} type="submit" aria-label="Gửi tin nhắn" title="Gửi tin nhắn">➤</button>
+            <button className={styles.sendButton} type="submit" disabled={isSending} aria-label="Gửi tin nhắn" title="Gửi tin nhắn">➤</button>
           </form>
           </> : (
             <div className={styles.emptyChat}>

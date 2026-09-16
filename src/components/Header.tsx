@@ -42,6 +42,7 @@ export default function Header() {
   const [alertVehicles, setAlertVehicles] = useState<AlertVehicle[]>([]);
   const [hasAvailableAlert, setHasAvailableAlert] = useState(false);
   const alertDraftDirtyRef = useRef(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const [searchVehicles, setSearchVehicles] = useState<SearchVehicle[]>([]);
   const [isCatalogLoading, setIsCatalogLoading] = useState(true);
   const isCustomer = isAuthenticated && !isAdmin && Boolean(user);
@@ -204,6 +205,17 @@ export default function Header() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    const handleOutsideSearchClick = (event: PointerEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setSearchTerm('');
+      }
+    };
+
+    document.addEventListener('pointerdown', handleOutsideSearchClick);
+    return () => document.removeEventListener('pointerdown', handleOutsideSearchClick);
+  }, []);
+
   const suggestions = useMemo(() => {
     const normalizedTerm = searchTerm.trim().toLowerCase();
     if (!normalizedTerm) return [];
@@ -237,7 +249,7 @@ export default function Header() {
         {/* Khung giữa: Thanh tìm kiếm & Icons xe */}
         <div className="header-middle">
           {/* Ô tìm kiếm dạng thu gọn (hiện ra khi di chuột) */}
-          <div className="search-container">
+          <div className="search-container" ref={searchContainerRef}>
             <input
               type="search"
               className="search-input"

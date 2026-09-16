@@ -72,7 +72,10 @@ const suggestedQuestions = [
 
 function formatMessageTime(value: string) {
   const sqlDateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T]|$)/);
-  if (sqlDateMatch) return `${sqlDateMatch[3]}/${sqlDateMatch[2]}/${sqlDateMatch[1]}`;
+  if (sqlDateMatch) {
+    const sqlDate = new Date(Date.UTC(Number(sqlDateMatch[1]), Number(sqlDateMatch[2]) - 1, Number(sqlDateMatch[3]) + 1));
+    return `${String(sqlDate.getUTCDate()).padStart(2, '0')}/${String(sqlDate.getUTCMonth() + 1).padStart(2, '0')}/${sqlDate.getUTCFullYear()}`;
+  }
   const normalizedValue = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value) ? value : value.replace(" ", "T") + "+07:00";
   const date = new Date(normalizedValue);
   return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat('vi-VN', {
